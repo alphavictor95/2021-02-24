@@ -5,8 +5,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
 import it.polito.tdp.PremierLeague.model.Action;
+import it.polito.tdp.PremierLeague.model.Arco;
 import it.polito.tdp.PremierLeague.model.Match;
 import it.polito.tdp.PremierLeague.model.Player;
 import it.polito.tdp.PremierLeague.model.Team;
@@ -25,6 +30,7 @@ public class PremierLeagueDAO {
 
 				Player player = new Player(res.getInt("PlayerID"), res.getString("Name"));
 				result.add(player);
+				
 			}
 			conn.close();
 			return result;
@@ -103,6 +109,68 @@ public class PremierLeagueDAO {
 
 			}
 			conn.close();
+			Collections.sort(result);
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public List<Arco> getPlayerDiMatch(Match selezionato) {
+		String sql = "select distinct a1.teamID as tID1, a1.playerID as pID1, "
+				+ "(sum(a1.totalSuccessfulPassesALl)+sum(a1.assists))/a1.timePlayed as eff1 "
+				+ ",a2.teamID as tID2, a2.playerID as pID2, "
+				+ "(sum(a2.totalSuccessfulPassesALl)+sum(a2.assists))/a2.timePlayed as eff2 "
+				+ "from actions as a1, actions as a2 "
+				+ "where a1.matchID=? and a1.matchID=a2.matchID and "
+				+ " a1.teamID<a2.teamID "
+				+ "group by pID1, pID2 ";
+		List<Arco> result = new ArrayList<Arco>();
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, selezionato.getMatchID());
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				Arco a = new Arco(res.getInt("pID1"), res.getInt("pID2"), 
+						res.getDouble("eff1"), res.getDouble("eff2"));
+				result.add(a);
+				
+			}
+			conn.close();
+			return result;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public String getIdPlayer(int i) {
+		String sql = "SELECT distinct name "
+				+ "from players "
+				+ "where playerID=? ";
+		String result = "";
+		Connection conn = DBConnect.getConnection();
+
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, i);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+
+				
+				
+				
+				result= res.getString("name");
+
+			}
+			conn.close();
+			
 			return result;
 			
 		} catch (SQLException e) {
